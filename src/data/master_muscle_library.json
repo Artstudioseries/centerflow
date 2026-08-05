@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "title": "Master Muscle & Exercise Anatomical Library",
+    "description": "Consolidated, decoupled, relational anatomical muscle and exercise database",
+    "version": "1.0.0",
+    "schema_version": "2026-08",
+    "total_muscles": 71,
+    "total_exercises": 207,
+    "generated_at": "2026-08-04T20:10:01.674Z"
+  },
+  "exercises": [
+    {
+      "exercise_id": "ex_calf_raises",
+      "name": "Calf raises",
+      "type": "strengthening",
+      "equipment": "Bodyweight"
+    },
+    {
+      "exercise_id": "ex_calf_isometric",
+      "name": "Calf isometric",
+      "type": "strengthening",
+      "equipment": "Bodyweight"
+    },
+    {
+      "exercise_id": "ex_single_leg_calf_raise",
+      "name": "Single leg calf raise",
+      "type": "strengthening",
+      "equipment": "Bodyweight"
+    },
+    {
+      "exercise_id": "ex_goosesteps",
+      "name": "Goosesteps",
+      "type": "strengthening",
+      "equipment": "Bodyweight"
+    },
+    {
+      "exercise_id": "ex_heel_back_calf_stretch",
+      "name": "Heel-back calf stretch",
+      "type": "stretching",
+      "equipment": "Bodyweight"
+    },
+    {
+      "exercise_id": "ex_heel_drop_calf_stretch",
+      "name": "Heel-drop calf stretch",
+      "type": "stretching",
+      "equipment": "Bodyweight"
+    }
+  ],
+  "muscles": [
+    {
+      "id": "leg_post_01",
+      "muscle_name": "Gastrocnemius",
+      "anatomical_region": "Posterior Compartment of the Leg",
+      "latin_origin": "gaster (stomach), kneme (lower leg)",
+      "origin": "Medial and lateral femoral condyles",
+      "insertion": "Calcaneus via Achilles tendon",
+      "nerve": "Tibial nerve S1, 2",
+      "action": "Plantar flexes foot. Flexes knee.",
+      "basic_functional_movement": "Standing on tiptoes.",
+      "sports_heavy_utilization": ["Running", "Sprinting", "Jumping"],
+      "injury_risks": "Achilles tendon strain",
+      "common_problems": ["Achilles tendinopathy", "Calf cramps"],
+      "associated_exercise_ids": ["ex_calf_raises", "ex_heel_back_calf_stretch"],
+      "tags": ["Calf", "PosteriorChain"]
+    }
+  ]
+}
