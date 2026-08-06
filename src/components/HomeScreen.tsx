@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Routine, Stretch } from '../types';
+import { BodyMuscleMap } from './BodyMuscleMap';
 
 interface HomeScreenProps {
   userName: string;
@@ -124,27 +125,66 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         </div>
       </section>
 
-      {/* Target Relief Grid */}
+      {/* Interactive Body Muscle Map & Target Relief */}
       <section className="flex flex-col gap-3">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold">Target Relief</p>
-        <h3 className="text-xl md:text-2xl font-light text-white tracking-tight">
-          Where do you feel <span className="font-semibold text-white">tension?</span>
-        </h3>
+        <BodyMuscleMap
+          onSelectRoutine={onSelectRoutine}
+          onSelectStretch={onSelectStretch}
+          onStartTimer={onStartTimer}
+        />
+
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mt-1">
-          {routines.map((routine) => (
-            <div
-              key={routine.id}
-              onClick={() => onSelectRoutine(routine.id)}
-              className="bg-[#1A1A1C] p-4 rounded-2xl border border-white/5 hover:border-blue-500/30 transition-all cursor-pointer flex flex-col justify-between gap-3 group shadow-md"
-            >
-              <div className="flex flex-col gap-1">
-                <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">{routine.category}</span>
-                <h4 className="text-sm font-bold text-white group-hover:text-blue-300 transition-colors">{routine.title}</h4>
-                <p className="text-[11px] text-gray-400 line-clamp-2">{routine.subtitle}</p>
-              </div>
-              <span className="text-[10px] text-gray-500 font-mono">{routine.durationMinutes} Mins</span>
+          <button
+            onClick={() => onSearchQuery('Upper Body')}
+            className="bg-[#1A1A1C] rounded-2xl p-6 flex flex-col items-center justify-center gap-3 aspect-square border border-white/5 hover:border-blue-500/50 hover:bg-[#222224] transition-all active:scale-95 shadow-md group"
+          >
+            <div className="w-12 h-12 rounded-full bg-blue-600/10 text-blue-500 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+              <span className="material-symbols-outlined text-2xl">accessibility_new</span>
             </div>
-          ))}
+            <span className="text-sm font-medium text-gray-300 text-center group-hover:text-white">Upper Body</span>
+          </button>
+
+          <button
+            onClick={() => onSearchQuery('Lower Body')}
+            className="bg-[#1A1A1C] rounded-2xl p-6 flex flex-col items-center justify-center gap-3 aspect-square border border-white/5 hover:border-blue-500/50 hover:bg-[#222224] transition-all active:scale-95 shadow-md group"
+          >
+            <div className="w-12 h-12 rounded-full bg-blue-600/10 text-blue-500 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+              <span className="material-symbols-outlined text-2xl">directions_walk</span>
+            </div>
+            <span className="text-sm font-medium text-gray-300 text-center group-hover:text-white">Lower Body</span>
+          </button>
+
+          <button
+            onClick={() => onSearchQuery('Morning')}
+            className="bg-[#1A1A1C] rounded-2xl p-6 flex flex-col items-center justify-center gap-3 aspect-square border border-white/5 hover:border-blue-500/50 hover:bg-[#222224] transition-all active:scale-95 shadow-md group"
+          >
+            <div className="w-12 h-12 rounded-full bg-blue-600/10 text-blue-500 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+              <span className="material-symbols-outlined text-2xl">wb_sunny</span>
+            </div>
+            <span className="text-sm font-medium text-gray-300 text-center group-hover:text-white">Morning Flow</span>
+          </button>
+
+          <button
+            onClick={() => onSearchQuery('Sleep')}
+            className="bg-[#1A1A1C] rounded-2xl p-6 flex flex-col items-center justify-center gap-3 aspect-square border border-white/5 hover:border-blue-500/50 hover:bg-[#222224] transition-all active:scale-95 shadow-md group"
+          >
+            <div className="w-12 h-12 rounded-full bg-blue-600/10 text-blue-500 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">
+              <span className="material-symbols-outlined text-2xl">bedtime</span>
+            </div>
+            <span className="text-sm font-medium text-gray-300 text-center group-hover:text-white">Better Sleep</span>
+          </button>
+
+          <button
+            onClick={() => onSearchQuery('Full Body')}
+            className="col-span-2 md:col-span-1 bg-blue-600 text-white rounded-2xl p-6 flex flex-row md:flex-col items-center justify-center gap-3 md:aspect-square shadow-lg shadow-blue-900/20 hover:bg-blue-500 transition-all active:scale-95"
+          >
+            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-white">
+              <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+                self_improvement
+              </span>
+            </div>
+            <span className="text-sm font-semibold text-center">Full Body Flow</span>
+          </button>
         </div>
       </section>
 

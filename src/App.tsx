@@ -330,6 +330,7 @@ export default function App() {
             initialQuery={searchQuery}
             onSelectRoutine={handleSelectRoutine}
             onSelectStretch={handleSelectStretch}
+            onStartTimer={handleStartTimer}
             routines={ROUTINES_DATA}
             stretches={STRETCHES_DATA}
           />
