@@ -19,7 +19,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
 }) => {
   const [showAllHistory, setShowAllHistory] = useState(false);
 
-  const activePatronTier = TIERS.find((t) => t.id === userProfile.patronTier);
+  const activePatronTier = TIERS.find((t) => t.id === userProfile.patronTier) || TIERS[0];
 
   const displayedHistory = showAllHistory
     ? userProfile.recentActivity
@@ -40,13 +40,13 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-blue-500/50 shrink-0 bg-[#121214] relative">
             <img
               src={userProfile.avatarUrl}
-              alt={userProfile.name}
+              alt={userProfile.name || 'User'}
               className="w-full h-full object-cover"
             />
           </div>
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-2xl font-semibold text-white tracking-tight">{userProfile.name}</h3>
+              <h3 className="text-2xl font-semibold text-white tracking-tight">{userProfile.name || 'CenterFlow Member'}</h3>
               {activePatronTier && (
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-bold shadow-md ${activePatronTier.badgeClasses}`}>
                   <span className="material-symbols-outlined text-sm">{activePatronTier.badgeIcon}</span>
@@ -64,97 +64,80 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
             className="flex items-center gap-2 bg-blue-600/15 hover:bg-blue-600/25 border border-blue-500/30 text-blue-400 hover:text-blue-300 font-semibold text-xs py-2.5 px-4 rounded-xl transition-all active:scale-95 shrink-0"
           >
             <span className="material-symbols-outlined text-sm">favorite</span>
-            <span>{activePatronTier ? 'Change Sponsorship' : 'Patron & Gift'}</span>
+            <span>{activePatronTier.id === 'friend' ? 'Upgrade Membership' : 'Manage Membership'}</span>
           </button>
         )}
       </section>
 
       {/* Membership Status Banner & Billing Management */}
-      {userProfile.membershipStatus && userProfile.membershipStatus !== 'none' && (
-        <section className="bg-gradient-to-r from-blue-950/30 via-[#1A1A1C] to-[#161618] rounded-2xl p-6 border border-blue-500/30 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/40 text-blue-400 flex items-center justify-center shrink-0">
-              <span className="material-symbols-outlined text-2xl">workspace_premium</span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 bg-blue-600/10 border border-blue-500/30 px-2.5 py-0.5 rounded-full">
-                  Membership Active
-                </span>
-                <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${
-                  userProfile.membershipStatus === 'active' || userProfile.membershipStatus === 'gift_active'
-                    ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
-                    : userProfile.membershipStatus === 'past_due'
-                    ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
-                    : 'bg-red-500/15 text-red-300 border-red-500/30'
-                }`}>
-                  Status: {userProfile.membershipStatus.toUpperCase()}
-                </span>
-              </div>
-              <h3 className="text-lg font-bold text-white tracking-tight">
-                {activePatronTier ? activePatronTier.name : 'Patron Pass'} ({userProfile.patronTier === 'pass' ? 'Annual Pass' : activePatronTier?.typeLabel || 'Sponsorship'})
-              </h3>
-              <p className="text-xs text-gray-400 leading-relaxed">
-                {userProfile.membershipExpiresAt
-                  ? `Renews/Expires on: ${new Date(userProfile.membershipExpiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
-                  : 'Full access to CenterFlow Patron features and supporter badge.'}
-              </p>
-            </div>
+      <section className="bg-gradient-to-r from-blue-950/30 via-[#1A1A1C] to-[#161618] rounded-2xl p-6 border border-blue-500/30 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/40 text-blue-400 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-2xl">workspace_premium</span>
           </div>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 bg-blue-600/10 border border-blue-500/30 px-2.5 py-0.5 rounded-full">
+                {activePatronTier.id === 'friend' ? 'Free Membership' : 'Membership Active'}
+              </span>
+              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border ${
+                userProfile.membershipStatus === 'active' || userProfile.membershipStatus === 'gift_active'
+                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                  : userProfile.membershipStatus === 'friend'
+                  ? 'bg-slate-500/15 text-slate-300 border-slate-500/30'
+                  : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+              }`}>
+                Status: {(userProfile.membershipStatus || 'friend').toUpperCase()}
+              </span>
+            </div>
+            <h3 className="text-lg font-bold text-white tracking-tight">
+              {activePatronTier.name} ({activePatronTier.typeLabel})
+            </h3>
+            <p className="text-xs text-gray-400 leading-relaxed">
+              {userProfile.membershipExpiresAt
+                ? `Renews/Expires on: ${new Date(userProfile.membershipExpiresAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`
+                : activePatronTier.id === 'friend'
+                ? 'Enjoy baseline routines and saved progress indefinitely for free.'
+                : 'Full access to CenterFlow features and supporter badge.'}
+            </p>
+          </div>
+        </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            {userProfile.stripeCustomerId && (
-              <button
-                onClick={async () => {
-                  try {
-                    const res = await fetch('/api/stripe/create-portal-session', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ customerId: userProfile.stripeCustomerId }),
-                    });
-                    const data = await res.json();
-                    if (data.url) {
-                      window.location.href = data.url;
-                    }
-                  } catch (e) {
-                    alert('Redirecting to Stripe Customer Portal');
+        <div className="flex items-center gap-2 shrink-0">
+          {userProfile.stripeCustomerId ? (
+            <button
+              onClick={async () => {
+                try {
+                  const res = await fetch('/api/stripe/create-portal-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ customerId: userProfile.stripeCustomerId }),
+                  });
+                  const data = await res.json();
+                  if (data.url) {
+                    window.location.href = data.url;
                   }
-                }}
-                className="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 font-semibold text-xs py-2.5 px-4 rounded-xl transition-all flex items-center gap-1.5 shadow-md"
+                } catch (e) {
+                  alert('Redirecting to Stripe Customer Portal');
+                }
+              }}
+              className="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 font-semibold text-xs py-2.5 px-4 rounded-xl transition-all flex items-center gap-1.5 shadow-md"
+            >
+              <span className="material-symbols-outlined text-sm">manage_accounts</span>
+              <span>Manage Billing / Cancel</span>
+            </button>
+          ) : (
+            onOpenPatronModal && (
+              <button
+                onClick={onOpenPatronModal}
+                className="bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs py-2.5 px-4 rounded-xl transition-all shadow-md"
               >
-                <span className="material-symbols-outlined text-sm">manage_accounts</span>
-                <span>Manage Billing / Cancel</span>
+                Sponsor & Upgrade
               </button>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Sponsor CenterFlow Card */}
-      {onOpenPatronModal && (!userProfile.membershipStatus || userProfile.membershipStatus === 'none') && (
-        <section
-          onClick={onOpenPatronModal}
-          className="bg-gradient-to-r from-[#18181C] via-[#141418] to-[#101014] rounded-2xl p-6 border border-white/10 hover:border-blue-500/40 transition-all cursor-pointer shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group"
-        >
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/30 text-blue-400 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <span className="material-symbols-outlined text-2xl">favorite</span>
-            </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400">Patron & Gift Membership</span>
-              <h3 className="text-lg font-bold text-white tracking-tight">Sponsor CenterFlow</h3>
-              <p className="text-xs text-gray-400 max-w-xl leading-relaxed">
-                CenterFlow is an independent body relief platform. Support development or gift a membership to a friend or coworker dealing with desk fatigue.
-              </p>
-            </div>
-          </div>
-
-          <button className="shrink-0 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs py-2.5 px-5 rounded-xl transition-all flex items-center gap-1.5 shadow-md group-hover:translate-x-0.5">
-            <span>Support</span>
-            <span className="material-symbols-outlined text-sm">arrow_forward</span>
-          </button>
-        </section>
-      )}
+            )
+          )}
+        </div>
+      </section>
 
       {/* Bento Stats Grid */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">

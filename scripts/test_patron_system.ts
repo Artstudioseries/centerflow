@@ -15,8 +15,18 @@ async function runTests() {
   }
   console.log('PASSED: Server health and Stripe prices configured.');
 
-  // Test 2: $1 Monthly Supporter Checkout Session
-  console.log('\n[Test 2] Testing $1 Monthly Supporter Checkout Session...');
+  // Test 2: Default Account Initialization (CenterFlow Friend)
+  console.log('\n[Test 2] Testing Default Account Initialization (CenterFlow Friend Free Tier)...');
+  const defaultMemRes = await fetch(`${BASE_URL}/api/user/membership?userId=new_registered_user_123`);
+  const defaultMemData: any = await defaultMemRes.json();
+  console.log('Default Account Membership State:', defaultMemData);
+  if (defaultMemData.patronTier !== 'friend' || defaultMemData.membershipStatus !== 'friend') {
+    throw new Error('Default account registration failed to assign Friend membership tier');
+  }
+  console.log('PASSED: Default account automatically receives CenterFlow Friend free tier.');
+
+  // Test 3: $1 Monthly Supporter Checkout Session
+  console.log('\n[Test 3] Testing $1 Monthly Supporter Checkout Session...');
   const supporterRes = await fetch(`${BASE_URL}/api/stripe/create-checkout-session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -34,8 +44,8 @@ async function runTests() {
   }
   console.log('PASSED: $1 monthly supporter checkout session created.');
 
-  // Test 3: $5 Monthly Guardian Checkout Session
-  console.log('\n[Test 3] Testing $5 Monthly Guardian Checkout Session...');
+  // Test 4: $5 Monthly Guardian Checkout Session
+  console.log('\n[Test 4] Testing $5 Monthly Guardian Checkout Session...');
   const guardianRes = await fetch(`${BASE_URL}/api/stripe/create-checkout-session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -53,8 +63,8 @@ async function runTests() {
   }
   console.log('PASSED: $5 monthly guardian checkout session created.');
 
-  // Test 4: $40 Annual Pass Checkout Session
-  console.log('\n[Test 4] Testing $40 Annual Pass Checkout Session...');
+  // Test 5: $40 Annual Pass Checkout Session & Permission Mapping
+  console.log('\n[Test 5] Testing $40 Annual Pass Checkout Session & Permission Mapping...');
   const passRes = await fetch(`${BASE_URL}/api/stripe/create-checkout-session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -72,8 +82,8 @@ async function runTests() {
   }
   console.log('PASSED: $40 annual pass checkout session created.');
 
-  // Test 5: Gift Membership Purchase & Redemption Flow
-  console.log('\n[Test 5] Testing Gift Membership Purchase and Redemption Flow...');
+  // Test 6: Gift Membership Purchase & Redemption Flow
+  console.log('\n[Test 6] Testing Gift Membership Purchase and Redemption Flow...');
   const giftPurchaseRes = await fetch(`${BASE_URL}/api/stripe/create-checkout-session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -89,12 +99,8 @@ async function runTests() {
     }),
   });
   const giftPurchaseData: any = await giftPurchaseRes.json();
-  console.log('Gift Purchase Checkout Response:', giftPurchaseData);
-
-  // Verify created gift session
   const verifyGiftRes = await fetch(`${BASE_URL}/api/stripe/verify-session?session_id=${giftPurchaseData.sessionId}`);
   const verifyGiftData: any = await verifyGiftRes.json();
-  console.log('Gift Session Verification:', verifyGiftData);
   const giftCode = verifyGiftData.giftCode;
 
   if (!giftCode) {
@@ -102,8 +108,6 @@ async function runTests() {
   }
   console.log(`Generated Gift Code: ${giftCode}`);
 
-  // Redeem Gift Code for Recipient Account
-  console.log(`Redeeming Gift Code ${giftCode} for recipient recipient@example.com...`);
   const redeemRes = await fetch(`${BASE_URL}/api/gifts/redeem`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -120,8 +124,8 @@ async function runTests() {
   }
   console.log('PASSED: Gift membership redeemed successfully.');
 
-  // Test 6: Duplicate Gift Code Redemption Lock Check
-  console.log('\n[Test 6] Verifying Duplicate Gift Code Redemption Prevention...');
+  // Test 7: Duplicate Gift Code Redemption Lock Check
+  console.log('\n[Test 7] Verifying Duplicate Gift Code Redemption Prevention...');
   const dupRedeemRes = await fetch(`${BASE_URL}/api/gifts/redeem`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -132,15 +136,14 @@ async function runTests() {
     }),
   });
   const dupRedeemData: any = await dupRedeemRes.json();
-  console.log('Duplicate Redemption Attempt Response:', dupRedeemData);
   if (dupRedeemRes.status !== 400 || !dupRedeemData.error.includes('already redeemed')) {
     throw new Error('Failed to prevent duplicate gift code redemption');
   }
   console.log('PASSED: Duplicate gift redemption correctly blocked.');
 
-  // Test 7: Webhook Confirmation & User Account Status Verification
-  console.log('\n[Test 7] Simulating Webhook event checkout.session.completed for new member...');
-  const simWebhookRes = await fetch(`${BASE_URL}/api/stripe/simulate-webhook`, {
+  // Test 8: Webhook Confirmation & User Account Status Verification
+  console.log('\n[Test 8] Simulating Webhook event checkout.session.completed for new member...');
+  await fetch(`${BASE_URL}/api/stripe/simulate-webhook`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -164,10 +167,7 @@ async function runTests() {
       },
     }),
   });
-  const simWebhookData: any = await simWebhookRes.json();
-  console.log('Simulated Webhook Response:', simWebhookData);
 
-  // Check user account status via API
   const memRes = await fetch(`${BASE_URL}/api/user/membership?userId=user_webhook_999`);
   const memData: any = await memRes.json();
   console.log('User Account Membership State after Webhook:', memData);
@@ -176,36 +176,36 @@ async function runTests() {
   }
   console.log('PASSED: Webhook confirmed payment and updated account status.');
 
-  // Test 8: Webhook Subscription Updates & Cancellations
-  console.log('\n[Test 8] Simulating customer.subscription.updated (past_due)...');
+  // Test 9: Webhook Subscription Cancellation & Automatic Revert to Friend
+  console.log('\n[Test 9] Simulating customer.subscription.deleted (reverting to Friend tier)...');
   await fetch(`${BASE_URL}/api/stripe/simulate-webhook`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      id: 'evt_test_sub_update',
+      id: 'evt_test_sub_deleted',
       object: 'event',
-      type: 'customer.subscription.updated',
+      type: 'customer.subscription.deleted',
       data: {
         object: {
           id: 'sub_test_webhook_sub',
           object: 'subscription',
           customer: 'cus_test_webhook_user',
-          status: 'past_due',
+          status: 'canceled',
         },
       },
     }),
   });
 
-  const updatedMemRes = await fetch(`${BASE_URL}/api/user/membership?userId=user_webhook_999`);
-  const updatedMemData: any = await updatedMemRes.json();
-  console.log('User Account State after Subscription Update:', updatedMemData);
-  if (updatedMemData.membershipStatus !== 'past_due') {
-    throw new Error('Subscription status update webhook failed');
+  const revertedMemRes = await fetch(`${BASE_URL}/api/user/membership?userId=user_webhook_999`);
+  const revertedMemData: any = await revertedMemRes.json();
+  console.log('User Account State after Subscription Cancellation:', revertedMemData);
+  if (revertedMemData.membershipStatus !== 'friend' || revertedMemData.patronTier !== 'friend') {
+    throw new Error('Subscription cancellation failed to automatically revert account to Friend tier');
   }
-  console.log('PASSED: Subscription updated status to past_due.');
+  console.log('PASSED: Subscription cancellation automatically reverted account to CenterFlow Friend tier.');
 
-  // Test 9: Customer Portal Session Creation
-  console.log('\n[Test 9] Testing Stripe Customer Portal Session Creation...');
+  // Test 10: Customer Portal Session Creation
+  console.log('\n[Test 10] Testing Stripe Customer Portal Session Creation...');
   const portalRes = await fetch(`${BASE_URL}/api/stripe/create-portal-session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -218,7 +218,7 @@ async function runTests() {
   }
   console.log('PASSED: Stripe Customer Portal session created successfully.');
 
-  console.log('\nALL 9 TESTS PASSED SUCCESSFULLY! Patron and Membership system verified (Donation tier removed).');
+  console.log('\nALL 10 TESTS PASSED SUCCESSFULLY! CenterFlow Membership Architecture Verified.');
 }
 
 runTests().catch((err) => {

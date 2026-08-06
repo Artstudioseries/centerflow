@@ -76,13 +76,13 @@ export interface UserProfile {
   minutesRelaxed: number;
   dayStreak: number;
   savedStretchIds: string[];
-  patronTier?: 'supporter' | 'guardian' | 'pass' | null;
+  patronTier?: 'friend' | 'supporter' | 'guardian' | null;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
   stripeProductId?: string;
   stripePriceId?: string;
   paymentStatus?: 'paid' | 'unpaid' | 'failed' | 'canceled' | 'pending' | 'none';
-  membershipStatus?: 'active' | 'canceled' | 'past_due' | 'unpaid' | 'gift_active' | 'expired' | 'none';
+  membershipStatus?: 'active' | 'canceled' | 'past_due' | 'unpaid' | 'gift_active' | 'expired' | 'friend' | 'none';
   membershipExpiresAt?: string;
   purchasedGiftCode?: string;
   redeemedGiftCode?: string;

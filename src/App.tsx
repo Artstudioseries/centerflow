@@ -19,7 +19,7 @@ import { PatronModal } from './components/PatronModal';
 import { AuthModal } from './components/AuthModal';
 
 const INITIAL_PROFILE: UserProfile = {
-  name: 'Alex',
+  name: '',
   memberSince: 'October 2023',
   avatarUrl:
     'https://lh3.googleusercontent.com/aida-public/AB6AXuBY3C901yvV--lpN4JeMJwMolZm2pBIgUNVVO0F_RMIc0fQqkVT4GtVLo9owIQ6nhEiat6tCkTyGw8DRr4VEyGwVFlBkTPvSuZLWxKMPHJA0GzBnAuT4BlMSTxnqtrCvrq5wb-gwWwGpMoex5AXgAdQ3v2eqr0ZKu-PU0xdo9XdT12EX5uFFEcrpagrtBqeoei6eR-uXa2HVN9hNGj_xnsmZu6SlUV_m65XbAqwDEPkXKzxiaySZ9p5',
@@ -27,6 +27,8 @@ const INITIAL_PROFILE: UserProfile = {
   minutesRelaxed: 1860,
   dayStreak: 12,
   savedStretchIds: ['spine-lengthening-reach', 'chair-hamstring-stretch'],
+  patronTier: 'friend',
+  membershipStatus: 'friend',
   recentActivity: [
     {
       id: 'act-1',
@@ -92,11 +94,13 @@ export default function App() {
               email: user.email || data.email,
               avatarUrl: user.photoURL || data.avatarUrl || prev.avatarUrl,
               firebaseUid: user.uid,
+              patronTier: data.patronTier || prev.patronTier || 'friend',
+              membershipStatus: data.membershipStatus || prev.membershipStatus || 'friend',
             }));
           } else {
-            // Create user document
+            // Create user document with Friend free tier by default
             await setDoc(userDocRef, {
-              name: user.displayName || 'Alex',
+              name: user.displayName || '',
               email: user.email || '',
               firebaseUid: user.uid,
               memberSince: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
@@ -105,7 +109,8 @@ export default function App() {
               minutesRelaxed: userProfile.minutesRelaxed,
               dayStreak: userProfile.dayStreak,
               savedStretchIds: userProfile.savedStretchIds,
-              patronTier: userProfile.patronTier || null,
+              patronTier: 'friend',
+              membershipStatus: 'friend',
             }, { merge: true });
           }
         } catch (err) {
@@ -117,11 +122,11 @@ export default function App() {
           const memRes = await fetch(`/api/user/membership?userId=${user.uid}&email=${user.email || ''}`);
           if (memRes.ok) {
             const memData = await memRes.json();
-            if (memData.membershipStatus && memData.membershipStatus !== 'none') {
+            if (memData.membershipStatus) {
               setUserProfile((prev) => ({
                 ...prev,
-                patronTier: memData.patronTier || prev.patronTier,
-                membershipStatus: memData.membershipStatus,
+                patronTier: memData.patronTier || prev.patronTier || 'friend',
+                membershipStatus: memData.membershipStatus || prev.membershipStatus || 'friend',
                 paymentStatus: memData.paymentStatus,
                 stripeCustomerId: memData.stripeCustomerId || prev.stripeCustomerId,
                 stripeSubscriptionId: memData.stripeSubscriptionId || prev.stripeSubscriptionId,
@@ -223,12 +228,13 @@ export default function App() {
   };
 
   const handleUpdateProfileTier = (
-    tierId: 'supporter' | 'guardian' | 'pass',
+    tierId: 'friend' | 'supporter' | 'guardian' | 'pass',
     extraDetails?: Partial<UserProfile>
   ) => {
+    const permissionTier = (tierId === 'pass') ? 'guardian' : tierId;
     setUserProfile((prev) => ({
       ...prev,
-      patronTier: tierId,
+      patronTier: permissionTier,
       ...extraDetails,
     }));
   };

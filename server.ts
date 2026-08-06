@@ -42,13 +42,13 @@ function getStripe(): Stripe | null {
 export interface ServerUserAccount {
   userId: string;
   email: string;
-  patronTier: 'supporter' | 'guardian' | 'pass' | 'donation' | null;
+  patronTier: 'friend' | 'supporter' | 'guardian' | null;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
   stripeProductId?: string;
   stripePriceId?: string;
   paymentStatus: 'paid' | 'unpaid' | 'failed' | 'canceled' | 'pending' | 'none';
-  membershipStatus: 'active' | 'canceled' | 'past_due' | 'unpaid' | 'gift_active' | 'expired' | 'none';
+  membershipStatus: 'active' | 'canceled' | 'past_due' | 'unpaid' | 'gift_active' | 'expired' | 'friend' | 'none';
   membershipExpiresAt?: string;
   purchasedGiftCode?: string;
   redeemedGiftCode?: string;
@@ -66,9 +66,9 @@ function getUserAccount(identifier: string, email?: string): ServerUserAccount {
     account = {
       userId: identifier,
       email: email || identifier,
-      patronTier: null,
+      patronTier: 'friend',
       paymentStatus: 'none',
-      membershipStatus: 'none',
+      membershipStatus: 'friend',
       updatedAt: new Date().toISOString(),
     };
     userAccountsMap.set(key, account);
@@ -187,9 +187,10 @@ async function handleWebhookEvent(event: Stripe.Event) {
         const targetIdentifier = userId || userEmail;
         if (targetIdentifier) {
           const expiration = calculateExpirationDate(tierId);
+          const permissionTier = (tierId === 'pass' || tierId === 'gift') ? 'guardian' : tierId;
           updateUserAccount(targetIdentifier, {
             email: userEmail,
-            patronTier: tierId as any,
+            patronTier: permissionTier as any,
             stripeCustomerId: customerId,
             stripeSubscriptionId: subscriptionId,
             stripeProductId: (STRIPE_PRODUCTS as any)[tierId],
@@ -198,7 +199,7 @@ async function handleWebhookEvent(event: Stripe.Event) {
             membershipStatus: 'active',
             membershipExpiresAt: expiration,
           });
-          console.log(`Activated membership status 'active' for user ${targetIdentifier} (Tier: ${tierId})`);
+          console.log(`Activated membership status 'active' for user ${targetIdentifier} (Permission: ${permissionTier}, Billing: ${tierId})`);
         }
       }
       break;
@@ -213,13 +214,14 @@ async function handleWebhookEvent(event: Stripe.Event) {
       if (status === 'past_due' || status === 'unpaid') {
         membershipStatus = 'past_due';
       } else if (status === 'canceled') {
-        membershipStatus = 'canceled';
+        membershipStatus = 'friend';
       }
 
       if (customerId) {
         updateUserAccount(customerId, {
           stripeSubscriptionId: subscription.id,
           membershipStatus,
+          ...(status === 'canceled' ? { patronTier: 'friend' } : {}),
         });
         console.log(`Updated subscription ${subscription.id} status to ${membershipStatus}`);
       }
@@ -231,11 +233,13 @@ async function handleWebhookEvent(event: Stripe.Event) {
       const customerId = typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
 
       if (customerId) {
+        // Automatically revert canceled/deleted subscription to Friend free membership
         updateUserAccount(customerId, {
-          membershipStatus: 'canceled',
+          patronTier: 'friend',
+          membershipStatus: 'friend',
           paymentStatus: 'canceled',
         });
-        console.log(`Canceled subscription ${subscription.id} for customer ${customerId}`);
+        console.log(`Canceled subscription ${subscription.id} for customer ${customerId}. Reverted account to CenterFlow Friend tier.`);
       }
       break;
     }
@@ -489,7 +493,7 @@ app.get('/api/stripe/verify-session', async (req, res) => {
         customerEmail: userEmail,
         stripeCustomerId: session.customer as string,
         stripeSubscriptionId: session.subscription as string,
-        membershipStatus: account?.membershipStatus || (session.payment_status === 'paid' ? 'active' : 'none'),
+        membershipStatus: account?.membershipStatus || (session.payment_status === 'paid' ? 'active' : 'friend'),
       });
       return;
     } catch (err: any) {
@@ -525,18 +529,7 @@ app.get('/api/user/membership', (req, res) => {
     return;
   }
 
-  const account = userAccountsMap.get(identifier.toLowerCase());
-  if (!account) {
-    res.json({
-      userId: identifier,
-      email: identifier,
-      patronTier: null,
-      paymentStatus: 'none',
-      membershipStatus: 'none',
-    });
-    return;
-  }
-
+  const account = getUserAccount(identifier);
   res.json(account);
 });
 
@@ -611,7 +604,7 @@ app.post('/api/gifts/redeem', (req, res) => {
   // Activate 1-Year Pass Membership on Recipient Account
   updateUserAccount(targetIdentifier, {
     email: userEmail,
-    patronTier: 'pass',
+    patronTier: 'guardian',
     paymentStatus: 'paid',
     membershipStatus: 'gift_active',
     membershipExpiresAt: expiration,
