@@ -111,3 +111,5 @@ export const PhilosophyScreen: React.FC<PhilosophyScreenProps> = ({ onBack, onSt
     </div>
   );
 };
+
+

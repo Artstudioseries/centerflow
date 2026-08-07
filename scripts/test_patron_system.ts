@@ -63,7 +63,7 @@ async function runTests() {
   }
   console.log('PASSED: $5 monthly guardian checkout session created.');
 
-  // Test 5: $40 Annual Pass Checkout Session & Permission Mapping
+  // Test 5: $40 Annual Pass Checkout Session & Guardian Permission Mapping
   console.log('\n[Test 5] Testing $40 Annual Pass Checkout Session & Permission Mapping...');
   const passRes = await fetch(`${BASE_URL}/api/stripe/create-checkout-session`, {
     method: 'POST',

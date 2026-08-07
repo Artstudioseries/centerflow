@@ -1,60 +1,114 @@
 import React from 'react';
 import { MasterExercise } from '../types';
+import masterLibrary from '../data/master_muscle_library.json';
 
 interface ExerciseDetailModalProps {
-  exercise: MasterExercise;
+  exercise: MasterExercise | null;
   onClose: () => void;
+  onSelectMuscle: (muscleId: string) => void;
 }
 
-export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({ exercise, onClose }) => {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-lg bg-[#18181A] rounded-3xl border border-white/10 p-6 shadow-2xl flex flex-col gap-6 max-h-[85vh] overflow-y-auto">
-        <div className="flex items-start justify-between border-b border-white/5 pb-4">
-          <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 bg-blue-600/10 border border-blue-500/20 px-3 py-1 rounded-full w-fit">
-              Exercise Technique • {exercise.type}
-            </span>
-            <h3 className="text-2xl font-bold text-white tracking-tight mt-1">{exercise.name}</h3>
-          </div>
+export const ExerciseDetailModal: React.FC<ExerciseDetailModalProps> = ({
+  exercise,
+  onClose,
+  onSelectMuscle,
+}) => {
+  if (!exercise) return null;
 
+  // Find all muscles associated with this exercise (Reverse Lookup)
+  const targetedMuscles = masterLibrary.muscles.filter((m) =>
+    m.associated_exercise_ids.includes(exercise.exercise_id)
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 p-4 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto flex items-start sm:items-center justify-center animate-fade-in">
+      <div className="relative w-full max-w-xl max-h-[85vh] sm:max-h-[90vh] bg-[#18181A] border border-white/10 rounded-3xl p-5 sm:p-6 md:p-8 shadow-2xl flex flex-col gap-6 my-auto text-gray-200 overflow-y-auto">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-5">
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span
+                className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${
+                  exercise.type === 'strengthening'
+                    ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30'
+                    : exercise.type === 'stretching'
+                    ? 'bg-blue-600/20 text-blue-400 border-blue-500/30'
+                    : 'bg-purple-600/20 text-purple-400 border-purple-500/30'
+                }`}
+              >
+                {exercise.type} Exercise
+              </span>
+              <span className="text-xs text-gray-400 flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm text-gray-500">fitness_center</span>
+                {exercise.equipment}
+              </span>
+            </div>
+            <h2 className="text-2xl font-semibold text-white tracking-tight">
+              {exercise.name}
+            </h2>
+          </div>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-white transition-colors rounded-full bg-white/5 hover:bg-white/10"
+            className="p-2 rounded-full bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all shrink-0"
+            aria-label="Close"
           >
-            <span className="material-symbols-outlined text-lg">close</span>
+            <span className="material-symbols-outlined text-xl">close</span>
           </button>
         </div>
 
+        {/* Content */}
         <div className="flex flex-col gap-4">
-          <div className="p-4 bg-[#121214] rounded-2xl border border-white/5 flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-400">Equipment Needed</span>
-            <span className="text-xs font-bold text-white bg-blue-600/20 border border-blue-500/30 px-3 py-1 rounded-full">
+          <div className="flex items-center justify-between bg-[#202024] rounded-2xl p-4 border border-white/5">
+            <span className="text-xs text-gray-400 font-medium">Equipment Required</span>
+            <span className="text-xs font-semibold text-white bg-white/10 px-3 py-1 rounded-lg">
               {exercise.equipment}
             </span>
           </div>
 
-          <div className="p-4 bg-[#121214] rounded-2xl border border-white/5 flex items-center justify-between">
-            <span className="text-xs font-semibold text-gray-400">Movement Classification</span>
-            <span className="text-xs font-bold text-emerald-400 bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 rounded-full capitalize">
-              {exercise.type}
-            </span>
-          </div>
+          {/* Reverse Lookup Targeted Muscles */}
+          <div className="flex flex-col gap-3">
+            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-blue-400 text-base">vital_signs</span>
+              Targeted Muscles ({targetedMuscles.length})
+            </h3>
 
-          <div className="p-4 bg-[#121214] rounded-2xl border border-white/5 flex flex-col gap-2">
-            <span className="text-xs font-bold text-white">Anatomical Focus</span>
-            <p className="text-xs text-gray-400 leading-relaxed">
-              Targeted strain relief and kinetic chain activation for stability, flexibility, and post-desk posture reset.
-            </p>
+            {targetedMuscles.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto no-scrollbar pr-1">
+                {targetedMuscles.map((muscle) => (
+                  <button
+                    key={muscle.id}
+                    onClick={() => {
+                      onSelectMuscle(muscle.id);
+                      onClose();
+                    }}
+                    className="flex flex-col items-start p-3 rounded-xl bg-[#202024] border border-white/5 hover:border-blue-500/50 hover:bg-[#25252a] text-left transition-all group"
+                  >
+                    <span className="text-[10px] font-semibold text-blue-400 truncate w-full">
+                      {muscle.anatomical_region}
+                    </span>
+                    <span className="text-xs font-medium text-white group-hover:text-blue-300 transition-colors">
+                      {muscle.muscle_name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-gray-500 italic bg-[#202024] p-3 rounded-xl border border-white/5">
+                General systemic or auxiliary movement.
+              </p>
+            )}
           </div>
         </div>
 
-        <button
-          onClick={onClose}
-          className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs py-3 px-6 rounded-2xl shadow-lg transition-all"
-        >
-          Close Inspection
-        </button>
+        {/* Footer */}
+        <div className="pt-4 border-t border-white/10 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs rounded-xl shadow-md transition-all"
+          >
+            Close Detail
+          </button>
+        </div>
       </div>
     </div>
   );

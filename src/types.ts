@@ -55,6 +55,7 @@ export interface Routine {
   movements: MovementStep[];
   badge?: string; // e.g. "Recovery", "3 MOVEMENTS"
   tags?: string[];
+  tierRequired?: 'friend' | 'supporter' | 'guardian';
 }
 
 export interface ActivityLogItem {
@@ -76,16 +77,11 @@ export interface UserProfile {
   minutesRelaxed: number;
   dayStreak: number;
   savedStretchIds: string[];
-  patronTier?: 'friend' | 'supporter' | 'guardian' | null;
+  patronTier?: 'friend' | 'supporter' | 'guardian' | 'pass' | null;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
-  stripeProductId?: string;
-  stripePriceId?: string;
-  paymentStatus?: 'paid' | 'unpaid' | 'failed' | 'canceled' | 'pending' | 'none';
-  membershipStatus?: 'active' | 'canceled' | 'past_due' | 'unpaid' | 'gift_active' | 'expired' | 'friend' | 'none';
+  membershipStatus?: 'active' | 'canceled' | 'past_due' | 'unpaid' | 'gift_active' | 'none';
   membershipExpiresAt?: string;
-  purchasedGiftCode?: string;
-  redeemedGiftCode?: string;
   recentActivity: ActivityLogItem[];
   settings: {
     audioEnabled: boolean;
@@ -166,3 +162,4 @@ export interface MasterLibraryPayload {
   exercises: MasterExercise[];
   muscles: MasterMuscle[];
 }
+

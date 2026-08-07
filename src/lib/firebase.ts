@@ -17,9 +17,7 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
 // Initialize Firestore with specific databaseId if provided
-export const db = firebaseConfig.firestoreDatabaseId 
-  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
-  : getFirestore(app);
+export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || undefined);
 
 export {
   signInWithPopup,

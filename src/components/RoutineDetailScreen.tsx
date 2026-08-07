@@ -5,8 +5,8 @@ interface RoutineDetailScreenProps {
   routine: Routine;
   onBack: () => void;
   onStartRoutine: (routineId: string) => void;
-  onSelectStretch: (stretchId: string) => void;
-  onSearchQuery: (query: string) => void;
+  onSelectStretch?: (stretchId: string) => void;
+  onSearchQuery?: (query: string) => void;
 }
 
 export const RoutineDetailScreen: React.FC<RoutineDetailScreenProps> = ({
@@ -17,77 +17,106 @@ export const RoutineDetailScreen: React.FC<RoutineDetailScreenProps> = ({
   onSearchQuery,
 }) => {
   return (
-    <div className="w-full max-w-[1000px] mx-auto px-5 md:px-16 pt-6 pb-32 flex flex-col gap-8">
-      {/* Banner */}
-      <div className="relative w-full h-64 md:h-80 rounded-3xl overflow-hidden bg-[#121214] border border-white/10 shadow-2xl">
-        <img src={routine.imageUrl} alt={routine.title} className="w-full h-full object-cover opacity-85" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F10] via-[#0F0F10]/50 to-transparent flex flex-col justify-end p-6 md:p-10 gap-2">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400 bg-blue-600/20 border border-blue-500/30 px-3 py-1 rounded-full w-fit">
-            {routine.category} Routine
-          </span>
-          <h2 className="text-3xl md:text-5xl font-bold text-white tracking-tight">{routine.title}</h2>
-          <p className="text-xs md:text-sm text-gray-300 max-w-2xl leading-relaxed">{routine.subtitle}</p>
-        </div>
-      </div>
-
-      {/* Start Button & Meta Stats */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 bg-[#1A1A1C] rounded-2xl border border-white/5 shadow-lg">
-        <div className="flex items-center gap-6">
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Duration</span>
-            <span className="text-lg font-bold font-mono text-white">{routine.durationMinutes} Minutes</span>
-          </div>
-          <div className="w-px h-8 bg-white/10" />
-          <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Movements</span>
-            <span className="text-lg font-bold font-mono text-white">{routine.movementsCount} Steps</span>
-          </div>
-        </div>
-
+    <div className="w-full max-w-[1200px] mx-auto px-5 md:px-16 pt-6 pb-32 flex flex-col gap-8">
+      {/* Header Bar */}
+      <div className="flex items-center justify-between">
         <button
-          onClick={() => onStartRoutine(routine.id)}
-          className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm py-3.5 px-8 rounded-2xl shadow-xl shadow-blue-900/30 transition-all flex items-center justify-center gap-2 active:scale-95"
+          onClick={onBack}
+          className="p-2 -ml-2 text-gray-300 hover:text-white transition-colors rounded-full bg-[#1A1A1C] border border-white/10"
         >
-          <span className="material-symbols-outlined text-xl">play_arrow</span>
-          <span>Start Full Routine</span>
+          <span className="material-symbols-outlined text-xl">arrow_back</span>
         </button>
+        <h2 className="text-xl md:text-2xl font-semibold text-white truncate max-w-[70%] text-center tracking-tight">
+          {routine.title}
+        </h2>
+        <div className="w-10" />
       </div>
 
-      {/* Routine Steps List */}
-      <section className="flex flex-col gap-4">
-        <h3 className="text-xl font-bold text-white tracking-tight">Sequence Steps ({routine.movements.length})</h3>
+      {/* Main Content Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+        {/* Left Column: Hero & Overview */}
+        <div className="md:col-span-5 flex flex-col gap-6">
+          <div className="relative w-full aspect-[4/3] md:aspect-square rounded-2xl overflow-hidden shadow-xl border border-white/10 group bg-[#1A1A1C]">
+            <img
+              src={routine.imageUrl}
+              alt={routine.title}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#0F0F10] via-transparent to-transparent" />
+            <div className="absolute bottom-4 left-4 right-4 flex items-center gap-3">
+              <span className="bg-[#0F0F10]/80 text-gray-300 text-xs font-semibold px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md">
+                {routine.movementsCount} MOVEMENTS
+              </span>
+              <span className="bg-[#0F0F10]/80 text-blue-400 text-xs font-semibold px-3 py-1.5 rounded-full border border-blue-500/30 backdrop-blur-md flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm">schedule</span>
+                {routine.durationMinutes} MINS
+              </span>
+            </div>
+          </div>
 
-        <div className="flex flex-col gap-3">
-          {routine.movements.map((step, idx) => (
-            <div
-              key={step.id}
-              onClick={() => step.stretchId && onSelectStretch(step.stretchId)}
-              className="bg-[#1A1A1C] p-5 rounded-2xl border border-white/5 hover:border-blue-500/30 transition-all flex items-center justify-between gap-4 group cursor-pointer"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-blue-600/10 border border-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-sm shrink-0">
+          <p className="text-sm md:text-base text-gray-400 leading-relaxed">{routine.description}</p>
+        </div>
+
+        {/* Right Column: Routine Breakdown Steps */}
+        <div className="md:col-span-7 flex flex-col gap-6">
+          <h3 className="text-xl font-light text-white tracking-tight">Routine Breakdown</h3>
+
+          <div className="flex flex-col gap-4 relative">
+            {routine.movements.map((step, idx) => (
+              <div
+                key={step.id}
+                onClick={() => step.stretchId && onSelectStretch && onSelectStretch(step.stretchId)}
+                className="bg-[#1A1A1C] border border-white/5 hover:border-blue-500/50 rounded-2xl p-5 flex gap-4 items-start cursor-pointer transition-all duration-300 shadow-md group"
+              >
+                <div className="w-9 h-9 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center font-semibold text-sm shrink-0 mt-0.5 group-hover:bg-blue-600 group-hover:text-white transition-all">
                   {idx + 1}
                 </div>
-                <div className="flex flex-col gap-0.5">
-                  <h4 className="text-base font-bold text-white group-hover:text-blue-300 transition-colors">
-                    {step.name}
-                  </h4>
-                  <p className="text-xs text-gray-400 leading-relaxed line-clamp-1">{step.description}</p>
+
+                <div className="flex-1">
+                  <div className="flex justify-between items-start gap-2 mb-1">
+                    <h4 className="text-base font-semibold text-gray-200 group-hover:text-blue-400 transition-colors">
+                      {step.name}
+                    </h4>
+                    <span className="text-xs font-semibold text-blue-400 bg-blue-600/20 px-2.5 py-0.5 rounded-md border border-blue-500/30 shrink-0">
+                      {step.durationMinutes}m
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-gray-400 leading-relaxed mb-3">{step.description}</p>
+
+                  <div className="flex flex-wrap gap-2">
+                    {step.muscleGroups.map((m) => (
+                      <button
+                        key={m}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onSearchQuery) onSearchQuery(m);
+                        }}
+                        className="text-[11px] bg-[#222226] text-blue-400 font-medium px-2.5 py-1 rounded-md border border-blue-500/20 hover:bg-blue-600 hover:text-white transition-all shadow-sm"
+                      >
+                        {m}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-
-              <div className="flex items-center gap-3 shrink-0">
-                <span className="text-xs font-mono font-bold text-gray-400 bg-[#121214] px-3 py-1 rounded-full border border-white/5">
-                  {step.durationMinutes} min
-                </span>
-                <span className="material-symbols-outlined text-gray-500 group-hover:text-blue-400 group-hover:translate-x-1 transition-all text-lg">
-                  chevron_right
-                </span>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </section>
+      </div>
+
+      {/* Floating Action Button */}
+      <div className="fixed bottom-6 left-0 right-0 z-40 px-5 flex justify-center pointer-events-none">
+        <button
+          onClick={() => onStartRoutine(routine.id)}
+          className="pointer-events-auto bg-blue-600 text-white font-semibold text-sm px-8 py-3.5 rounded-full shadow-lg shadow-blue-900/30 hover:bg-blue-500 active:scale-95 transition-all flex items-center gap-2 max-w-sm w-full justify-center"
+        >
+          <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>
+            play_arrow
+          </span>
+          <span>Start Routine</span>
+        </button>
+      </div>
     </div>
   );
 };

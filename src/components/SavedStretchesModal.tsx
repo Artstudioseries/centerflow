@@ -13,8 +13,8 @@ export const SavedStretchesModal: React.FC<SavedStretchesModalProps> = ({
   onSelectStretch,
 }) => {
   return (
-    <div className="fixed inset-0 z-50 bg-[#0F0F10]/90 backdrop-blur-xl flex items-center justify-center p-4">
-      <div className="bg-[#1A1A1C] border border-white/10 rounded-2xl max-w-xl w-full max-h-[80vh] flex flex-col overflow-hidden shadow-2xl">
+    <div className="fixed inset-0 z-50 p-4 sm:p-6 bg-[#0F0F10]/90 backdrop-blur-xl overflow-y-auto flex items-start sm:items-center justify-center">
+      <div className="bg-[#1A1A1C] border border-white/10 rounded-2xl max-w-xl w-full max-h-[85vh] sm:max-h-[90vh] my-auto flex flex-col overflow-hidden shadow-2xl">
         <div className="p-5 border-b border-white/10 flex items-center justify-between">
           <h3 className="text-xl font-semibold text-white flex items-center gap-2 tracking-tight">
             <span className="material-symbols-outlined text-red-500 text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>

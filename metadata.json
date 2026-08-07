@@ -1,0 +1,6 @@
+{
+  "name": "CenterFlow",
+  "description": "Movement guidance by Arturo Garcia. Mindfulness, guided stretch routines, tension recovery, and personalized wellness.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

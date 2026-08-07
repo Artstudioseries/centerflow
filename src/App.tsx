@@ -20,41 +20,15 @@ import { AuthModal } from './components/AuthModal';
 
 const INITIAL_PROFILE: UserProfile = {
   name: '',
-  memberSince: 'October 2023',
+  memberSince: 'August 2026',
   avatarUrl:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuBY3C901yvV--lpN4JeMJwMolZm2pBIgUNVVO0F_RMIc0fQqkVT4GtVLo9owIQ6nhEiat6tCkTyGw8DRr4VEyGwVFlBkTPvSuZLWxKMPHJA0GzBnAuT4BlMSTxnqtrCvrq5wb-gwWwGpMoex5AXgAdQ3v2eqr0ZKu-PU0xdo9XdT12EX5uFFEcrpagrtBqeoei6eR-uXa2HVN9hNGj_xnsmZu6SlUV_m65XbAqwDEPkXKzxiaySZ9p5',
-  totalStretches: 124,
-  minutesRelaxed: 1860,
-  dayStreak: 12,
-  savedStretchIds: ['spine-lengthening-reach', 'chair-hamstring-stretch'],
+    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
+  totalStretches: 0,
+  minutesRelaxed: 0,
+  dayStreak: 1,
+  savedStretchIds: ['spine-lengthening-reach'],
   patronTier: 'friend',
-  membershipStatus: 'friend',
-  recentActivity: [
-    {
-      id: 'act-1',
-      title: 'Evening Wind Down',
-      dateLabel: 'Today • 15 min',
-      durationMinutes: 15,
-      timestamp: Date.now(),
-      iconType: 'nightlight',
-    },
-    {
-      id: 'act-2',
-      title: 'Morning Mobility',
-      dateLabel: 'Yesterday • 10 min',
-      durationMinutes: 10,
-      timestamp: Date.now() - 86400000,
-      iconType: 'wb_sunny',
-    },
-    {
-      id: 'act-3',
-      title: 'Desk Worker Relief',
-      dateLabel: 'Oct 24 • 20 min',
-      durationMinutes: 20,
-      timestamp: Date.now() - 172800000,
-      iconType: 'airline_seat_recline_extra',
-    },
-  ],
+  recentActivity: [],
   settings: {
     audioEnabled: true,
     breathGuidance: true,
@@ -76,7 +50,7 @@ export default function App() {
   const [isPatronModalOpen, setIsPatronModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Sync with Firebase Auth and Server Membership API
+  // Sync with Firebase Auth
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
@@ -90,54 +64,41 @@ export default function App() {
             setUserProfile((prev) => ({
               ...prev,
               ...data,
-              name: user.displayName || data.name || prev.name,
+              name: user.displayName || data.name || prev.name || '',
               email: user.email || data.email,
               avatarUrl: user.photoURL || data.avatarUrl || prev.avatarUrl,
               firebaseUid: user.uid,
-              patronTier: data.patronTier || prev.patronTier || 'friend',
-              membershipStatus: data.membershipStatus || prev.membershipStatus || 'friend',
+              patronTier: data.patronTier || 'friend',
             }));
           } else {
-            // Create user document with Friend free tier by default
-            await setDoc(userDocRef, {
-              name: user.displayName || '',
+            // New user registered: automatically assign CenterFlow Friend (Free)
+            const displayName = user.displayName || (user.email ? user.email.split('@')[0] : '');
+            const newProfile: UserProfile = {
+              name: displayName,
               email: user.email || '',
               firebaseUid: user.uid,
               memberSince: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-              avatarUrl: user.photoURL || userProfile.avatarUrl,
-              totalStretches: userProfile.totalStretches,
-              minutesRelaxed: userProfile.minutesRelaxed,
-              dayStreak: userProfile.dayStreak,
-              savedStretchIds: userProfile.savedStretchIds,
+              avatarUrl: user.photoURL || INITIAL_PROFILE.avatarUrl,
+              totalStretches: 0,
+              minutesRelaxed: 0,
+              dayStreak: 1,
+              savedStretchIds: ['spine-lengthening-reach'],
               patronTier: 'friend',
-              membershipStatus: 'friend',
-            }, { merge: true });
+              membershipStatus: 'none',
+              recentActivity: [],
+              settings: {
+                audioEnabled: true,
+                breathGuidance: true,
+                darkMode: true,
+                dailyReminder: true,
+              },
+            };
+
+            await setDoc(userDocRef, newProfile, { merge: true });
+            setUserProfile(newProfile);
           }
         } catch (err) {
           console.error('Firestore user sync error:', err);
-        }
-
-        // Fetch backend server-verified membership status (activated by Webhook)
-        try {
-          const memRes = await fetch(`/api/user/membership?userId=${user.uid}&email=${user.email || ''}`);
-          if (memRes.ok) {
-            const memData = await memRes.json();
-            if (memData.membershipStatus) {
-              setUserProfile((prev) => ({
-                ...prev,
-                patronTier: memData.patronTier || prev.patronTier || 'friend',
-                membershipStatus: memData.membershipStatus || prev.membershipStatus || 'friend',
-                paymentStatus: memData.paymentStatus,
-                stripeCustomerId: memData.stripeCustomerId || prev.stripeCustomerId,
-                stripeSubscriptionId: memData.stripeSubscriptionId || prev.stripeSubscriptionId,
-                stripeProductId: memData.stripeProductId,
-                stripePriceId: memData.stripePriceId,
-                membershipExpiresAt: memData.membershipExpiresAt,
-              }));
-            }
-          }
-        } catch (e) {
-          console.error('Error fetching server membership status:', e);
         }
       }
     });
@@ -152,16 +113,14 @@ export default function App() {
     const tier = params.get('tier');
 
     if (sessionId && tier) {
-      const queryUser = currentUser?.uid ? `&user_id=${currentUser.uid}` : '';
-      fetch(`/api/stripe/verify-session?session_id=${sessionId}&tier=${tier}${queryUser}`)
+      fetch(`/api/stripe/verify-session?session_id=${sessionId}&tier=${tier}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.valid) {
             handleUpdateProfileTier(tier as any, {
               stripeCustomerId: data.stripeCustomerId,
               stripeSubscriptionId: data.stripeSubscriptionId,
-              membershipStatus: data.membershipStatus || 'active',
-              paymentStatus: 'paid',
+              membershipStatus: 'active',
             });
             setIsPatronModalOpen(true);
             // Clean URL params
@@ -170,7 +129,7 @@ export default function App() {
         })
         .catch((err) => console.error('Error verifying Stripe return session:', err));
     }
-  }, [currentUser]);
+  }, []);
 
   // Sync profile state with localStorage and Firestore
   useEffect(() => {
@@ -228,13 +187,12 @@ export default function App() {
   };
 
   const handleUpdateProfileTier = (
-    tierId: 'friend' | 'supporter' | 'guardian' | 'pass',
+    tierId: 'supporter' | 'guardian' | 'pass',
     extraDetails?: Partial<UserProfile>
   ) => {
-    const permissionTier = (tierId === 'pass') ? 'guardian' : tierId;
     setUserProfile((prev) => ({
       ...prev,
-      patronTier: permissionTier,
+      patronTier: tierId,
       ...extraDetails,
     }));
   };
@@ -300,6 +258,8 @@ export default function App() {
               ? 'Movement Guidance'
               : 'CenterFlow'
           }
+          activeTab={screen.type === 'tab' ? screen.tab : undefined}
+          onTabChange={handleTabChange}
           showBack={screen.type !== 'tab' || screen.tab !== 'home'}
           onBack={handleGoBack}
           onNavigateHome={handleNavigateHome}
@@ -315,6 +275,8 @@ export default function App() {
           <HomeScreen
             userName={userProfile.name}
             userAvatarUrl={userProfile.avatarUrl}
+            isGuest={!currentUser}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
             onSelectRoutine={handleSelectRoutine}
             onSelectStretch={handleSelectStretch}
             onStartTimer={handleStartTimer}
@@ -338,8 +300,12 @@ export default function App() {
 
         {screen.type === 'tab' && screen.tab === 'routines' && (
           <RoutinesScreen
-            onSelectRoutine={(routine) => handleSelectRoutine(routine.id)}
+            userTier={userProfile.patronTier}
+            isGuest={!currentUser}
+            onSelectRoutine={handleSelectRoutine}
             onSelectPhilosophy={() => navigateTo({ type: 'philosophy' })}
+            onOpenPatronModal={() => setIsPatronModalOpen(true)}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
             routines={ROUTINES_DATA}
           />
         )}

@@ -8,65 +8,50 @@ interface PatronModalProps {
   currentUser: User | null;
   userProfile: UserProfile;
   onOpenAuth: () => void;
-  onUpdateProfileTier: (tierId: 'friend' | 'supporter' | 'guardian' | 'pass', details?: any) => void;
+  onUpdateProfileTier: (tierId: 'supporter' | 'guardian' | 'pass', details?: any) => void;
 }
 
 type TabType = 'personal' | 'gift' | 'redeem';
 
 export interface TierOption {
-  id: 'friend' | 'supporter' | 'guardian' | 'pass';
+  id: 'supporter' | 'guardian' | 'pass';
   name: string;
   priceLabel: string;
   amount: number;
-  period: string; // e.g., 'Free', '/mo', '/yr'
-  typeLabel: 'Free' | 'Monthly' | 'Annual';
+  period: string; // e.g., '/mo', '/yr'
+  typeLabel: 'Monthly' | 'Annual';
   description: string;
   badgeName: string;
   badgeIcon: string;
   badgeClasses: string;
   badgeBorder: string;
   isPopular?: boolean;
-  isFree?: boolean;
 }
 
 export const TIERS: TierOption[] = [
   {
-    id: 'friend',
-    name: 'CenterFlow Friend',
-    priceLabel: 'Free',
-    amount: 0,
-    period: 'Forever',
-    typeLabel: 'Free',
-    isFree: true,
-    description: 'Default free account. Includes introductory routines, basic stretch library & saved progress.',
-    badgeName: 'CenterFlow Friend',
-    badgeIcon: 'spa',
-    badgeClasses: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
-    badgeBorder: 'border-slate-500/40',
-  },
-  {
     id: 'supporter',
-    name: 'Supporter',
+    name: 'CenterFlow Supporter',
     priceLabel: '$1',
     amount: 1,
     period: '/mo',
     typeLabel: 'Monthly',
-    description: 'Support development while unlocking full routine library and saving favorite routines.',
-    badgeName: 'Community Supporter',
+    description: 'Unlock full routine library, save favorites, and get early access.',
+    badgeName: 'CenterFlow Supporter',
     badgeIcon: 'favorite',
     badgeClasses: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
     badgeBorder: 'border-emerald-500/40',
   },
   {
     id: 'guardian',
-    name: 'Guardian',
+    name: 'CenterFlow Guardian',
     priceLabel: '$5',
     amount: 5,
     period: '/mo',
     typeLabel: 'Monthly',
     isPopular: true,
-    description: 'Primary membership. Includes AI recommendations, custom routine builder & premium routines.',
-    badgeName: 'Platform Guardian',
+    description: 'Full routine library + AI recommendations, custom builder, and premium routines.',
+    badgeName: 'CenterFlow Guardian',
     badgeIcon: 'shield_with_heart',
     badgeClasses: 'bg-blue-500/20 text-blue-300 border-blue-400/50 shadow-blue-500/20',
     badgeBorder: 'border-blue-500/50',
@@ -78,8 +63,8 @@ export const TIERS: TierOption[] = [
     amount: 40,
     period: '/yr',
     typeLabel: 'Annual',
-    description: 'Full year of Guardian access billed annually ($40/yr).',
-    badgeName: '1-Yr Patron Pass',
+    description: 'Same full access as Guardian (AI tools, custom builder, premium routines) billed annually.',
+    badgeName: 'Annual Pass Holder',
     badgeIcon: 'military_tech',
     badgeClasses: 'bg-amber-500/20 text-amber-300 border-amber-400/50 shadow-amber-500/20',
     badgeBorder: 'border-amber-500/50',
@@ -95,7 +80,7 @@ export const PatronModal: React.FC<PatronModalProps> = ({
   onUpdateProfileTier,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('personal');
-  const [selectedTierId, setSelectedTierId] = useState<'friend' | 'supporter' | 'guardian' | 'pass'>('guardian');
+  const [selectedTierId, setSelectedTierId] = useState<'supporter' | 'guardian' | 'pass'>('guardian');
   const [recipientEmail, setRecipientEmail] = useState('');
   const [recipientName, setRecipientName] = useState('');
   const [giftNote, setGiftNote] = useState('');
@@ -111,40 +96,17 @@ export const PatronModal: React.FC<PatronModalProps> = ({
 
   if (!isOpen) return null;
 
-  const selectedTier = TIERS.find((t) => t.id === selectedTierId) || TIERS[2];
-  const activeUserTier = TIERS.find((t) => t.id === userProfile.patronTier) || TIERS[0];
+  const selectedTier = TIERS.find((t) => t.id === selectedTierId) || TIERS[1];
+  const activeUserTier = TIERS.find((t) => t.id === userProfile.patronTier);
 
   const handleCheckout = async () => {
     setErrorMsg(null);
-    if (!currentUser) {
-      setErrorMsg('Please sign in or create an account to link your patron membership to your profile.');
-      onOpenAuth();
-      return;
-    }
-
     setIsProcessing(true);
 
     try {
       const isGift = activeTab === 'gift';
       const actualTierId = isGift ? 'pass' : selectedTierId;
       const actualAmount = selectedTier.amount;
-
-      if (!isGift && selectedTierId === 'friend') {
-        onUpdateProfileTier('friend', { membershipStatus: 'friend' });
-        setSuccessInfo({
-          tierName: 'CenterFlow Friend',
-          badgeName: 'CenterFlow Friend',
-          message: 'You are enjoying the free CenterFlow Friend membership! No payment is required.',
-        });
-        setIsProcessing(false);
-        return;
-      }
-
-      if (isGift && !recipientEmail.trim()) {
-        setErrorMsg('Please enter a recipient email address for the gift pass.');
-        setIsProcessing(false);
-        return;
-      }
 
       const response = await fetch('/api/stripe/create-checkout-session', {
         method: 'POST',
@@ -156,8 +118,8 @@ export const PatronModal: React.FC<PatronModalProps> = ({
           recipientEmail,
           recipientName,
           giftNote,
-          userId: currentUser.uid,
-          userEmail: currentUser.email || userProfile.email || 'patron@centerflow.app',
+          userId: currentUser?.uid || 'guest',
+          userEmail: currentUser?.email || 'guest@centerflow.app',
         }),
       });
 
@@ -166,33 +128,33 @@ export const PatronModal: React.FC<PatronModalProps> = ({
         throw new Error(data.error || 'Failed to initiate checkout session');
       }
 
+      // Automatically handle checkout URL or simulation redirect
       if (data.url) {
         if (data.mode === 'test_simulation') {
-          const verifyRes = await fetch(`/api/stripe/verify-session?session_id=${data.sessionId}&user_id=${currentUser.uid}`);
+          // Verify session internally and update status
+          const verifyRes = await fetch(`/api/stripe/verify-session?session_id=${data.sessionId}`);
           const verifyData = await verifyRes.json();
 
           setIsProcessing(false);
           if (verifyData.valid) {
             const badge = isGift ? '1-Yr Patron Pass' : selectedTier.badgeName;
-            if (!isGift) {
-              onUpdateProfileTier(actualTierId, {
-                stripeCustomerId: verifyData.stripeCustomerId,
-                stripeSubscriptionId: verifyData.stripeSubscriptionId,
-                membershipStatus: verifyData.membershipStatus || 'active',
-                paymentStatus: 'paid',
-              });
-            }
+            onUpdateProfileTier(actualTierId, {
+              stripeCustomerId: verifyData.stripeCustomerId,
+              stripeSubscriptionId: verifyData.stripeSubscriptionId,
+              membershipStatus: 'active',
+            });
 
             setSuccessInfo({
               tierName: isGift ? '1-Yr Gift Pass' : selectedTier.name,
               badgeName: badge,
               giftCode: verifyData.giftCode,
               message: isGift
-                ? `Gift pass created! Invitation code ${verifyData.giftCode} generated for ${recipientEmail || 'your recipient'}.`
-                : `Payment confirmed by Stripe Webhook! Thank you for backing CenterFlow as a ${selectedTier.name}. Your membership benefits are now active.`,
+                ? `Gift pass created! Share code ${verifyData.giftCode} with ${recipientEmail || 'your recipient'}.`
+                : `Thank you for becoming a ${selectedTier.name}! Your patron badge is now active.`,
             });
           }
         } else {
+          // Redirect to official Stripe Checkout page
           window.location.href = data.url;
         }
       }
@@ -206,12 +168,6 @@ export const PatronModal: React.FC<PatronModalProps> = ({
   const handleRedeemGift = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-    if (!currentUser) {
-      setErrorMsg('Please sign in or create an account to redeem your gift membership pass.');
-      onOpenAuth();
-      return;
-    }
-
     if (!giftRedeemCode.trim()) {
       setErrorMsg('Please enter a valid gift code.');
       return;
@@ -224,8 +180,8 @@ export const PatronModal: React.FC<PatronModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           code: giftRedeemCode,
-          userEmail: currentUser.email || userProfile.email,
-          userId: currentUser.uid,
+          userEmail: currentUser?.email,
+          userId: currentUser?.uid,
         }),
       });
 
@@ -236,16 +192,11 @@ export const PatronModal: React.FC<PatronModalProps> = ({
         throw new Error(data.error || 'Redemption failed');
       }
 
-      onUpdateProfileTier('pass', {
-        membershipStatus: 'gift_active',
-        paymentStatus: 'paid',
-        membershipExpiresAt: data.membershipExpiresAt,
-      });
-
+      onUpdateProfileTier('pass', { membershipStatus: 'gift_active' });
       setSuccessInfo({
         tierName: '1-Year Gift Pass',
         badgeName: '1-Yr Patron Pass',
-        message: data.message || 'Gift pass redeemed successfully! Your 1-Year Patron Pass is active.',
+        message: data.message || 'Gift pass redeemed successfully!',
       });
     } catch (err: any) {
       setIsProcessing(false);
@@ -273,14 +224,14 @@ export const PatronModal: React.FC<PatronModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-2xl bg-[#18181A] rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[92vh]">
+    <div className="fixed inset-0 z-50 p-4 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto flex items-start sm:items-center justify-center animate-fadeIn">
+      <div className="relative w-full max-w-xl bg-[#18181A] rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col my-auto max-h-[88vh] sm:max-h-[90vh]">
         {/* Top Header */}
         <div className="p-6 pb-4 border-b border-white/5 flex items-start justify-between relative bg-gradient-to-r from-blue-950/20 via-[#18181A] to-[#18181A]">
           <div className="flex flex-col gap-1 pr-6">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 bg-blue-600/10 border border-blue-500/20 px-3 py-1 rounded-full w-fit">
-                CenterFlow Membership System
+                Patron & Membership System
               </span>
               {activeUserTier && (
                 <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${activeUserTier.badgeClasses}`}>
@@ -288,9 +239,9 @@ export const PatronModal: React.FC<PatronModalProps> = ({
                 </span>
               )}
             </div>
-            <h2 className="text-2xl font-bold text-white tracking-tight mt-1">CenterFlow Memberships</h2>
+            <h2 className="text-2xl font-bold text-white tracking-tight mt-1">Sponsor CenterFlow</h2>
             <p className="text-xs text-gray-400 leading-relaxed mt-0.5">
-              Enjoy CenterFlow for free as a Friend, or choose a paid membership to support the platform and unlock premium features.
+              CenterFlow is an independent body relief platform. Support development, maintain monthly membership, or gift an annual pass to someone in need.
             </p>
           </div>
 
@@ -332,7 +283,7 @@ export const PatronModal: React.FC<PatronModalProps> = ({
                   {currentUser ? currentUser.displayName || currentUser.email : 'Guest Session'}
                 </span>
                 <span className="text-[10px] text-gray-400">
-                  {currentUser ? 'CenterFlow Account Active' : 'Sign in to create your free account'}
+                  {currentUser ? 'Signed in with Google / Firebase Auth' : 'Sign in to sync your patron benefits across devices'}
                 </span>
               </div>
             </div>
@@ -342,7 +293,7 @@ export const PatronModal: React.FC<PatronModalProps> = ({
                 onClick={onOpenAuth}
                 className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/40 text-blue-300 font-semibold text-xs rounded-xl transition-all"
               >
-                Sign In / Free Account
+                Sign In
               </button>
             ) : userProfile.stripeCustomerId ? (
               <button
@@ -361,7 +312,7 @@ export const PatronModal: React.FC<PatronModalProps> = ({
               <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center animate-bounce">
                 <span className="material-symbols-outlined text-4xl">verified</span>
               </div>
-              <h3 className="text-2xl font-bold text-white tracking-tight">Membership Confirmed</h3>
+              <h3 className="text-2xl font-bold text-white tracking-tight">Payment & Membership Confirmed</h3>
               <p className="text-xs text-gray-300 max-w-md leading-relaxed">{successInfo.message}</p>
 
               {successInfo.giftCode && (
@@ -427,9 +378,9 @@ export const PatronModal: React.FC<PatronModalProps> = ({
               {activeTab === 'personal' && (
                 <div className="flex flex-col gap-4">
                   <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Select Your Membership Tier
+                    Select Your Sponsorship Plan
                   </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {TIERS.map((tier) => {
                       const isSelected = selectedTierId === tier.id;
                       return (
@@ -488,7 +439,7 @@ export const PatronModal: React.FC<PatronModalProps> = ({
                     <div className="flex flex-col gap-0.5">
                       <h4 className="text-xs font-bold text-white">CenterFlow Annual Gift Pass ($40)</h4>
                       <p className="text-[11px] text-gray-300 leading-relaxed">
-                        Purchase a 1-Year Guardian Membership Pass for a colleague, friend, or family member dealing with posture issues or desk fatigue.
+                        Purchase a 1-Year Patron Pass for a colleague, friend, or family member dealing with posture issues or desk fatigue.
                       </p>
                     </div>
                   </div>
@@ -543,7 +494,7 @@ export const PatronModal: React.FC<PatronModalProps> = ({
                       />
                     </div>
                     <p className="text-[11px] text-gray-400 leading-relaxed">
-                      Gift codes grant 1-Year of full Guardian membership status and badge. Codes can only be redeemed once.
+                      Gift codes grant 1-Year of full Patron status and the 1-Yr Patron Pass badge. Codes can only be redeemed once.
                     </p>
                     <button
                       type="submit"
@@ -576,16 +527,14 @@ export const PatronModal: React.FC<PatronModalProps> = ({
               {isProcessing ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  <span>Processing...</span>
+                  <span>Connecting to Stripe...</span>
                 </>
               ) : (
                 <>
                   <span>
-                    {activeTab === 'gift'
-                      ? 'Proceed with Gift Checkout ($40)'
-                      : selectedTierId === 'friend'
-                      ? 'Continue as CenterFlow Friend (Free)'
-                      : `Proceed with Stripe Checkout (${selectedTier.priceLabel})`}
+                    Proceed with Stripe Checkout (
+                    {activeTab === 'gift' ? '$40' : selectedTier.priceLabel}
+                    )
                   </span>
                   <span className="material-symbols-outlined text-base">arrow_forward</span>
                 </>
